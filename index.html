@@ -74,7 +74,7 @@
             const status = document.getElementById("status");
 
             if (value === "2") {
-                actionValue = "2";
+                actionValue = 2;
                 title.innerText = "🔓 NFC UNLOCK MODE";
                 instruction.innerHTML = `
           <p>This page is in <strong>UNLOCK</strong> mode.</p>
@@ -84,7 +84,7 @@
                 status.innerText = "Ready to unlock";
             }
             else if (value === "3") {
-                actionValue = "3";
+                actionValue = 3;
                 title.innerText = "🔒 NFC LOCK MODE";
                 instruction.innerHTML = `
           <p>This page is in <strong>LOCK</strong> mode.</p>
@@ -109,6 +109,7 @@
             suggestsRetry();
 
             if (!actionValue) return;
+            console.log("Starting NFC write with value:", actionValue);
 
             if (!("NDEFReader" in window)) {
                 showError("NFC is not supported on this device/browser");
