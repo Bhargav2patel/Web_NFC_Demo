@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>NFC Secure Transfer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f4f6f8;
+        }
+
+        button {
+            padding: 12px 18px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .center {
+            display: flex;
+            justify-content: center;
+            text-align: center;
+        }
+
+        input {
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .box {
+            margin-top: 15px;
+            background: #fff;
+            padding: 12px;
+            border-radius: 6px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>🔐 NFC Secure Data Transfer</h2>
+
+    <div class="box">
+        <strong>Enter Value (any number):</strong><br /><br />
+        <input id="valueInput" type="number" placeholder="Enter any number" />
+    </div>
+
+    <div class="box">
+        <strong>Secure Key (auto-generated):</strong>
+        <div id="secureKey"></div>
+    </div>
+
+    <div class="center">
+        <button style="margin-top:20px" onclick="startNFC()">
+            📡 Tap to Send via NFC
+        </button>
+    </div>
+
+    <div class="box">
+        <strong>Status:</strong>
+        <div id="status">Idle</div>
+    </div>
+
+    <script>
+        // Generate cryptographically secure random key
+        function generateSecureKey(length = 32) {
+            const array = new Uint8Array(length);
+            crypto.getRandomValues(array);
+            return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        const secureKey = generateSecureKey();
+        document.getElementById('secureKey').innerText = secureKey;
+
+        async function startNFC() {
+            const status = document.getElementById('status');
+            const valueInput = document.getElementById('valueInput').value;
+
+            if (valueInput === '') {
+                alert('Please enter a value before sending.');
+                return;
+            }
+
+            if (!('NDEFReader' in window)) {
+                alert('Web NFC is not supported on this device/browser.');
+                return;
+            }
+
+            const payload = {
+                secureKey: secureKey,
+                value: Number(valueInput)
+            };
+
+            try {
+                const ndef = new NDEFReader();
+
+                await ndef.write({
+                    records: [
+                        {
+                            recordType: "mime",
+                            mediaType: "application/json",
+                            data: JSON.stringify(payload)
+                        }
+                    ]
+                });
+
+                status.innerText = '✅ Data sent successfully. Tap another NFC device.';
+            } catch (err) {
+                console.error(err);
+                status.innerText = '❌ NFC Error: ' + err.message;
+            }
+        }
+    </script>
+
+</body>
+
+</html>
