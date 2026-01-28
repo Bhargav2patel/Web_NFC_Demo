@@ -47,8 +47,8 @@
     <h2>🔐 NFC Secure Data Transfer</h2>
 
     <div class="box">
-        <strong>Enter Value (any number):</strong><br /><br />
-        <input id="valueInput" type="number" placeholder="Enter any number" />
+        <strong>Enter Value:</strong><br /><br />
+        <input id="valueInput" type="text" placeholder="Enter any number" />
     </div>
 
     <div class="box">
@@ -104,15 +104,17 @@
                 const encoder = new TextEncoder();
                 const encodedData = encoder.encode(JSON.stringify(payload));
 
-                await ndef.write({
-                    records: [
-                        {
-                            recordType: "mime",
-                            mediaType: "application/json",
-                            data: encodedData
-                        }
-                    ]
-                });
+                // await ndef.write({
+                //     records: [
+                //         {
+                //             recordType: "mime",
+                //             mediaType: "application/json",
+                //             data: encodedData
+                //         }
+                //     ]
+                // });
+
+                await ndef.write("hello World");
 
                 status.innerText = '✅ Data sent successfully. Tap another NFC device.';
             } catch (err) {
