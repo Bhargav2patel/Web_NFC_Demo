@@ -100,12 +100,16 @@
             try {
                 const ndef = new NDEFReader();
 
+                // 🔑 FIX: encode JSON to ArrayBuffer
+                const encoder = new TextEncoder();
+                const encodedData = encoder.encode(JSON.stringify(payload));
+
                 await ndef.write({
                     records: [
                         {
                             recordType: "mime",
                             mediaType: "application/json",
-                            data: JSON.stringify(payload)
+                            data: encodedData
                         }
                     ]
                 });
