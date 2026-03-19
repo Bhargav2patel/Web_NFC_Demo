@@ -60,73 +60,126 @@
     <script>
         let actionValue = null;
 
-        // Read ?value= from URL
         function getValueFromURL() {
             const params = new URLSearchParams(window.location.search);
             return params.get("value");
         }
 
-        // Setup UI based on URL value
         function setupUI(value) {
             const title = document.getElementById("title");
             const instruction = document.getElementById("instruction");
             const button = document.getElementById("actionButton");
             const status = document.getElementById("status");
 
+            // 🔓 UNLOCK MODE
             if (value === "2") {
                 actionValue = "2";
                 title.innerText = "🔓 NFC UNLOCK MODE";
                 instruction.innerHTML = `
-          <p>This page is in <strong>UNLOCK</strong> mode.</p>
-          <p>Click the button below and then tap your NFC device.</p>
-        `;
+                    <p>This page is in <strong>UNLOCK</strong> mode.</p>
+                    <p>Click below and tap NFC device.</p>
+                    <br>
+                    <button onclick="switchToRead()">📖 READ NFC</button>
+                `;
                 button.innerText = "UNLOCK VIA NFC";
                 status.innerText = "Ready to unlock";
             }
+
+            // 🔒 LOCK MODE
             else if (value === "3") {
                 actionValue = "3";
                 title.innerText = "🔒 NFC LOCK MODE";
                 instruction.innerHTML = `
-          <p>This page is in <strong>LOCK</strong> mode.</p>
-          <p>Click the button below and then tap your NFC device.</p>
-        `;
+                    <p>This page is in <strong>LOCK</strong> mode.</p>
+                    <p>Click below and tap NFC device.</p>
+                    <br>
+                    <button onclick="switchToRead()">📖 READ NFC</button>
+                `;
                 button.innerText = "LOCK VIA NFC";
                 status.innerText = "Ready to lock";
             }
+
+            // 📖 DEFAULT → READ MODE
             else {
-                document.body.innerHTML = `
-          <h2 class="error">❌ Invalid URL</h2>
-          <div class="box">
-            <p>Please open the page with one of these URLs:</p>
-            <p><strong>?value=2</strong> → Unlock</p>
-            <p><strong>?value=3</strong> → Lock</p>
-          </div>
-        `;
+                renderReadUI();
             }
+        }
+
+        function renderReadUI() {
+            const title = document.getElementById("title");
+            const instruction = document.getElementById("instruction");
+            const button = document.getElementById("actionButton");
+
+            actionValue = null;
+
+            title.innerText = "📖 NFC READ MODE";
+
+            instruction.innerHTML = `
+                <p>Click below and tap NFC tag to read data.</p>
+                <textarea id="nfcData" rows="4" style="width:100%;margin-top:15px;" disabled placeholder="Scanned data will appear here..."></textarea>
+                <br><br>
+                <a href="?value=2">🔓 Unlock Mode</a> | 
+                <a href="?value=3">🔒 Lock Mode</a>
+            `;
+
+            button.innerText = "READ NFC";
+            button.onclick = startRead;
+        }
+
+        function switchToRead() {
+            renderReadUI();
         }
 
         async function startNFC() {
             suggestsRetry();
 
             if (!actionValue) return;
-            console.log("Starting NFC write with value:", actionValue);
 
             if (!("NDEFReader" in window)) {
-                showError("NFC is not supported on this device/browser");
+                showError("NFC not supported");
+                return;
+            }
+
+            try {
+                const ndef = new NDEFReader();
+                await ndef.write(actionValue);
+                showSuccess("Data sent successfully");
+            } catch (err) {
+                console.error(err);
+                showError("Write failed");
+            }
+        }
+
+        async function startRead() {
+            suggestsRetry();
+
+            if (!("NDEFReader" in window)) {
+                showError("NFC not supported");
                 return;
             }
 
             try {
                 const ndef = new NDEFReader();
 
-                // Write ONLY the single number as text
-                await ndef.write(actionValue);
+                await ndef.scan();
 
-                showSuccess("Data sent successfully. NFC write complete.");
-            }
-            catch (err) {
+                ndef.onreading = (event) => {
+                    let text = "";
+
+                    for (const record of event.message.records) {
+                        if (record.recordType === "text") {
+                            const decoder = new TextDecoder(record.encoding);
+                            text += decoder.decode(record.data);
+                        }
+                    }
+
+                    document.getElementById("nfcData").value = text || "No text data found";
+                    showSuccess("Data read successfully");
+                };
+
+            } catch (err) {
                 console.error(err);
-                showError("Failed to send data. Please try again.");
+                showError("Read failed");
             }
         }
 
@@ -148,7 +201,6 @@
             status.innerText = "Tap NFC device now...";
         }
 
-        // Initialize on page load
         setupUI(getValueFromURL());
     </script>
 
